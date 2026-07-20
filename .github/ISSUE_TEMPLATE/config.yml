@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Сообщить об уязвимости конфиденциально
+    url: https://github.com/klinnmy-ui/bylo-tut-download/security/advisories/new
+    about: Не публикуйте сведения об уязвимости в открытом Issue.
