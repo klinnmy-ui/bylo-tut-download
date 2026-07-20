@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#3d474b">
+  <meta name="description" content="Поиск ближайших исторических фотографий PastVu">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+  <link rel="stylesheet" href="styles.css?v=11">
+  <title>Было Тут | Линии времени</title>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#top" aria-label="На главный экран"><b>Было Тут</b><span>&nbsp;| Линии времени</span></a>
+    <a class="feedback" href="https://github.com/klinnmy-ui/bylo-tut-download/issues/new/choose"
+       target="_blank" rel="noreferrer">Обратная связь</a>
+  </header>
+
+  <main id="top" class="app-shell">
+    <section class="search-panel" aria-labelledby="search-title">
+      <div class="intro-block">
+        <p class="eyebrow">Исторические фотографии рядом</p>
+        <h1 id="search-title">Найдите, что было здесь раньше</h1>
+        <p class="privacy-note">Выбранное фото остаётся на устройстве. В PastVu передаются только координаты и параметры поиска.</p>
+      </div>
+
+      <div class="mode-grid" aria-label="Источник точки поиска">
+        <button id="gallery-button" class="mode-card" type="button"><span aria-hidden="true">▣</span><b>Галерея</b><small>Фото с координатами</small></button>
+        <button id="camera-button" class="mode-card" type="button"><span aria-hidden="true">◉</span><b>Камера</b><small>Текущий ракурс</small></button>
+        <button id="location-button" class="mode-card" type="button"><span aria-hidden="true">⌖</span><b>Моя позиция</b><small>Без выбора фото</small></button>
+      </div>
+      <input id="photo-input" type="file" accept="image/jpeg,image/heic,image/heif" hidden>
+
+      <div id="media-stage" class="media-stage" hidden>
+        <img id="photo-preview" alt="Выбранное современное фото" hidden>
+        <video id="camera-preview" autoplay playsinline muted hidden></video>
+        <canvas id="camera-canvas" hidden></canvas>
+        <button id="capture-button" class="capture" type="button" hidden>Сделать снимок</button>
+      </div>
+
+      <div class="point-card">
+        <div class="section-heading"><b>Точка поиска</b><span id="point-status">Укажите координаты, точку на карте или текущую позицию</span></div>
+        <div class="coordinate-row">
+          <label>Широта<input id="latitude" inputmode="decimal" autocomplete="off" placeholder="55.755800"></label>
+          <label>Долгота<input id="longitude" inputmode="decimal" autocomplete="off" placeholder="37.617300"></label>
+        </div>
+        <div id="picker-map" class="picker-map" aria-label="Карта выбора точки"></div>
+        <div class="map-toolbar" aria-label="Масштаб карты выбора точки">
+          <button id="picker-zoom-out" type="button" aria-label="Уменьшить масштаб">−</button>
+          <span id="picker-zoom-label">Масштаб 12</span>
+          <button id="picker-zoom-in" type="button" aria-label="Увеличить масштаб">+</button>
+          <button id="picker-center" class="map-center" type="button">К точке</button>
+        </div>
+        <small>Нажмите на свободное место карты, чтобы изменить точку.</small>
+      </div>
+
+      <div class="radius-block">
+        <b>Радиус поиска</b>
+        <div class="radius-options" role="radiogroup" aria-label="Радиус поиска">
+          <label><input type="radio" name="radius" value="100"><span>100 м</span></label>
+          <label><input type="radio" name="radius" value="250" checked><span>250 м</span></label>
+          <label><input type="radio" name="radius" value="500"><span>500 м</span></label>
+          <label><input type="radio" name="radius" value="1000"><span>1 км</span></label>
+        </div>
+      </div>
+
+      <p id="message" class="message" role="status" aria-live="polite"></p>
+      <button id="search-button" class="primary-action" type="button">Найти ближайшие фото на PastVu</button>
+    </section>
+
+    <section class="results-panel" aria-labelledby="results-title">
+      <div class="results-header">
+        <div><p class="eyebrow">Результаты</p><h2 id="results-title">Исторические фото рядом</h2></div>
+        <div class="view-switch" aria-label="Вид результатов">
+          <button class="active" data-view="list" type="button">Список</button>
+          <button data-view="map" type="button">Карта</button>
+        </div>
+      </div>
+      <div id="comparison" class="comparison" hidden></div>
+      <div id="results-list" class="results-list"><div class="empty-state">Запустите поиск — найденные фотографии появятся здесь.</div></div>
+      <div id="results-map-pane" class="results-map-pane" hidden>
+        <div class="map-toolbar" aria-label="Масштаб карты результатов">
+          <button id="results-zoom-out" type="button" aria-label="Уменьшить масштаб">−</button>
+          <span id="results-zoom-label">Масштаб 12</span>
+          <button id="results-zoom-in" type="button" aria-label="Увеличить масштаб">+</button>
+          <button id="results-fit" class="map-center" type="button">Показать все</button>
+        </div>
+        <div id="results-map" class="results-map" aria-label="Карта результатов"></div>
+      </div>
+    </section>
+  </main>
+
+  <template id="result-template">
+    <article class="result-card">
+      <img alt="" loading="lazy">
+      <div><a target="_blank" rel="noreferrer"></a><p class="result-meta"></p><p class="result-direction"></p></div>
+    </article>
+  </template>
+
+  <dialog id="photo-viewer" class="photo-viewer" aria-label="Просмотр фотографии">
+    <div class="photo-viewer-toolbar">
+      <button id="photo-zoom-out" type="button" aria-label="Отдалить фотографию">−</button>
+      <button id="photo-zoom-reset" type="button" aria-label="Показать фотографию целиком">100%</button>
+      <button id="photo-zoom-in" type="button" aria-label="Приблизить фотографию">+</button>
+      <button id="photo-viewer-close" class="photo-viewer-close" type="button">Закрыть</button>
+    </div>
+    <div class="photo-viewer-stage"><img id="photo-viewer-image" alt=""></div>
+  </dialog>
+
+  <script src="vendor/exifr.full.umd.js"></script>
+  <script src="vendor/leaflet/leaflet.js"></script>
+  <script src="app.js?v=11" defer></script>
+</body>
+</html>

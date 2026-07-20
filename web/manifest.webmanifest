@@ -1,0 +1,14 @@
+{
+  "name": "Было Тут | Линии времени",
+  "short_name": "Было Тут",
+  "description": "Поиск ближайших исторических фотографий PastVu",
+  "lang": "ru",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#fafaf8",
+  "theme_color": "#3d474b",
+  "icons": [
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
