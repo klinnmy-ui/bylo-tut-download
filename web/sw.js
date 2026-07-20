@@ -1,4 +1,4 @@
-const CACHE = "bylo-tut-web-v17";
+const CACHE = "bylo-tut-web-v18";
 const SHELL = [
   "./", "index.html", "styles.css?v=13", "app.js?v=12", "manifest.webmanifest", "icons/icon.svg",
   "vendor/exifr.full.umd.js", "vendor/leaflet/leaflet.css", "vendor/leaflet/leaflet.js",
