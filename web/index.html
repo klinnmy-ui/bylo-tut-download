@@ -8,12 +8,12 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
-  <link rel="stylesheet" href="styles.css?v=11">
-  <title>Было Тут | Линии времени</title>
+  <link rel="stylesheet" href="styles.css?v=13">
+  <title>Было Тут</title>
 </head>
 <body>
   <header class="topbar">
-    <a class="brand" href="#top" aria-label="На главный экран"><b>Было Тут</b><span>&nbsp;| Линии времени</span></a>
+    <a class="brand" href="#top" aria-label="На главный экран"><b>Было Тут</b></a>
     <a class="feedback" href="https://github.com/klinnmy-ui/bylo-tut-download/issues/new/choose"
        target="_blank" rel="noreferrer">Обратная связь</a>
   </header>
@@ -38,6 +38,10 @@
         <video id="camera-preview" autoplay playsinline muted hidden></video>
         <canvas id="camera-canvas" hidden></canvas>
         <button id="capture-button" class="capture" type="button" hidden>Сделать снимок</button>
+        <figure id="historical-reference" class="historical-reference" hidden>
+          <img id="historical-reference-image" alt="Выбранное историческое фото">
+          <figcaption><a id="historical-reference-link" target="_blank" rel="noreferrer"></a></figcaption>
+        </figure>
       </div>
 
       <div class="point-card">
@@ -111,6 +115,6 @@
 
   <script src="vendor/exifr.full.umd.js"></script>
   <script src="vendor/leaflet/leaflet.js"></script>
-  <script src="app.js?v=11" defer></script>
+  <script src="app.js?v=12" defer></script>
 </body>
 </html>

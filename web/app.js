@@ -1,6 +1,6 @@
 const API_URL = "https://api.pastvu.com/api2";
 const DEFAULT_POINT = [55.7558, 37.6173];
-const state = { point: null, photoUrl: null, stream: null, results: [], pickerMarker: null, resultMarkers: [] };
+const state = { point: null, photoUrl: null, stream: null, results: [], selectedResult: null, pickerMarker: null, resultMarkers: [] };
 
 const $ = (id) => document.getElementById(id);
 const latitude = $("latitude");
@@ -96,9 +96,9 @@ $("photo-input").addEventListener("change", async event => {
   resetWorkspaceScroll();
   setMessage("Читаем координаты фотографии на устройстве…");
   try {
-    const metadata = await exifr.parse(file, ["latitude", "longitude", "DateTimeOriginal", "GPSImgDirection"]);
-    if (metadata?.latitude != null && metadata?.longitude != null) {
-      setPoint(metadata.latitude, metadata.longitude, "Координаты из фото");
+    const gps = await exifr.gps(file);
+    if (gps?.latitude != null && gps?.longitude != null) {
+      setPoint(gps.latitude, gps.longitude, "Координаты из фото");
       setMessage("Координаты извлечены из фотографии. Сам файл никуда не отправлен.");
     } else setMessage("В фото нет доступных координат — укажите точку вручную или на карте.", true);
   } catch {
@@ -110,17 +110,23 @@ $("location-button").addEventListener("click", () => {
   activateMode($("location-button"));
   stopCamera();
   $("media-stage").hidden = true;
+  requestCurrentPosition();
+});
+
+function requestCurrentPosition(fromCamera = false) {
   if (!navigator.geolocation) return setMessage("Этот браузер не поддерживает геопозицию.", true);
-  setMessage("Определяем текущую позицию…");
+  setMessage(fromCamera ? "Камера включена. Определяем текущую позицию…" : "Определяем текущую позицию…");
   navigator.geolocation.getCurrentPosition(
     position => {
       setPoint(position.coords.latitude, position.coords.longitude, "Текущая позиция");
-      setMessage(`Позиция определена с точностью около ${Math.round(position.coords.accuracy)} м.`);
+      setMessage(fromCamera
+        ? `Камера и позиция готовы, точность около ${Math.round(position.coords.accuracy)} м.`
+        : `Позиция определена с точностью около ${Math.round(position.coords.accuracy)} м.`);
     },
     () => setMessage("Не удалось определить позицию. Проверьте разрешение браузера и включение геолокации.", true),
     { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 }
   );
-});
+}
 
 $("camera-button").addEventListener("click", async () => {
   activateMode($("camera-button"));
@@ -128,11 +134,17 @@ $("camera-button").addEventListener("click", async () => {
     stopCamera();
     state.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false });
     $("media-stage").hidden = false;
+    $("media-stage").classList.remove("photo-mode");
+    $("media-stage").classList.add("camera-mode");
     $("photo-preview").hidden = true;
     $("camera-preview").hidden = false;
     $("capture-button").hidden = false;
     $("camera-preview").srcObject = state.stream;
-    setMessage("Камера включена. Для координат нажмите «Моя позиция» или выберите точку на карте.");
+    updateHistoricalReference();
+    if (!state.point) requestCurrentPosition(true);
+    else setMessage(state.selectedResult
+      ? "Камера включена. Подберите ракурс рядом с выбранным историческим фото."
+      : "Камера включена. После поиска выберите историческое фото для сопоставления.");
   } catch {
     setMessage("Камера недоступна. Проверьте разрешение браузера и подключение по HTTPS.", true);
   }
@@ -152,11 +164,27 @@ $("capture-button").addEventListener("click", () => {
 
 function showPhoto(url) {
   $("media-stage").hidden = false;
+  $("media-stage").classList.add("photo-mode");
+  $("media-stage").classList.remove("camera-mode");
   $("photo-preview").src = url;
   $("photo-preview").hidden = false;
   $("camera-preview").hidden = true;
   $("capture-button").hidden = true;
+  updateHistoricalReference();
   document.body.classList.add("has-media");
+}
+
+function updateHistoricalReference() {
+  const reference = $("historical-reference");
+  const photo = state.selectedResult;
+  reference.hidden = !photo;
+  $("media-stage").classList.toggle("with-reference", Boolean(photo));
+  if (!photo) return;
+  $("historical-reference-image").src = photo.thumb || "icons/icon.svg";
+  $("historical-reference-image").alt = photo.title;
+  const link = $("historical-reference-link");
+  link.textContent = photo.title;
+  link.href = photo.page || "#";
 }
 
 function resetWorkspaceScroll() {
@@ -174,6 +202,8 @@ function stopCamera() {
 
 searchButton.addEventListener("click", async () => {
   if (!pointFromInputs()) return setMessage("Укажите корректные широту и долготу.", true);
+  state.selectedResult = null;
+  updateHistoricalReference();
   const radius = Number(document.querySelector('input[name="radius"]:checked').value);
   const params = JSON.stringify({ geo: [state.point.lat, state.point.lon], limit: 30, distance: radius, type: "photo" });
   const url = `${API_URL}?method=photo.giveNearestPhotos&params=${encodeURIComponent(params)}`;
@@ -264,6 +294,8 @@ function fitResultsMap() {
 
 function selectResult(index) {
   const photo = state.results[index];
+  state.selectedResult = photo;
+  updateHistoricalReference();
   const comparison = $("comparison");
   const figures = [];
   if (state.photoUrl) figures.push(`<figure><img src="${state.photoUrl}" alt="Современное фото"><figcaption>Современное фото</figcaption></figure>`);
