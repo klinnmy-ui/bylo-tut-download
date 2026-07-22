@@ -13,12 +13,55 @@ const resultsMap = L.map("results-map", { zoomControl: true }).setView(DEFAULT_P
 [pickerMap, resultsMap].forEach(map => {
   map.attributionControl.setPrefix(false);
 });
-[pickerMap, resultsMap].forEach(map => L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-  maxZoom: 19,
-  keepBuffer: 3,
-  updateWhenIdle: false,
-  attribution: "© OpenStreetMap contributors"
-}).addTo(map));
+const MAP_TILE_SOURCES = [
+  {
+    url: "https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png",
+    options: { subdomains: "abcd", maxZoom: 20, attribution: "© OpenStreetMap contributors © CARTO" }
+  },
+  {
+    url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+    options: { maxZoom: 19, attribution: "© OpenStreetMap contributors" }
+  }
+];
+
+function addResilientTiles(map) {
+  const container = map.getContainer();
+  let sourceIndex = 0;
+  let failedTiles = 0;
+  let layer = null;
+
+  const loadSource = () => {
+    failedTiles = 0;
+    container.classList.remove("tiles-unavailable");
+    const source = MAP_TILE_SOURCES[sourceIndex];
+    layer = L.tileLayer(source.url, {
+      ...source.options,
+      keepBuffer: 3,
+      updateWhenIdle: false,
+      crossOrigin: true
+    });
+    layer.on("tileload", () => {
+      failedTiles = 0;
+      container.classList.remove("tiles-unavailable");
+    });
+    layer.on("tileerror", () => {
+      failedTiles += 1;
+      if (failedTiles < 3) return;
+      if (sourceIndex + 1 < MAP_TILE_SOURCES.length) {
+        map.removeLayer(layer);
+        sourceIndex += 1;
+        loadSource();
+      } else {
+        container.classList.add("tiles-unavailable");
+      }
+    });
+    layer.addTo(map);
+  };
+
+  loadSource();
+}
+
+[pickerMap, resultsMap].forEach(addResilientTiles);
 
 function keepMapSized(map) {
   map.whenReady(() => setTimeout(() => map.invalidateSize(false), 0));
@@ -302,7 +345,7 @@ function selectResult(index) {
   const pastVuCaption = photo.page
     ? `<a href="${photo.page}" target="_blank" rel="noreferrer">${escapeHtml(photo.title)}</a>`
     : escapeHtml(photo.title);
-  figures.push(`<figure><img src="${photo.thumb || "icons/icon.svg"}" alt="${escapeHtml(photo.title)}"><figcaption>${pastVuCaption}</figcaption></figure>`);
+  figures.push(`<figure><img src="${photo.thumb || "icons/icon.svg"}" alt="${escapeHtml(photo.title)}"><figcaption>${pastVuCaption}<small>Источник: PastVu</small></figcaption></figure>`);
   comparison.innerHTML = figures.join("");
   comparison.hidden = false;
   document.querySelector(".results-panel").classList.add("has-comparison");

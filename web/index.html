@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
-  <link rel="stylesheet" href="styles.css?v=13">
+  <link rel="stylesheet" href="styles.css?v=14">
   <title>Было Тут | Линии времени</title>
 </head>
 <body>
@@ -24,6 +24,7 @@
         <p class="eyebrow">Исторические фотографии рядом</p>
         <h1 id="search-title">Найдите, что было здесь раньше</h1>
         <p class="privacy-note">Выбранное фото остаётся на устройстве. В PastVu передаются только координаты и параметры поиска.</p>
+        <p class="legal-note">Использует открытый API PastVu. Не является официальным приложением PastVu. Права на исторические изображения принадлежат их правообладателям.</p>
       </div>
 
       <div class="mode-grid" aria-label="Источник точки поиска">
@@ -99,7 +100,7 @@
   <template id="result-template">
     <article class="result-card">
       <img alt="" loading="lazy">
-      <div><a target="_blank" rel="noreferrer"></a><p class="result-meta"></p><p class="result-direction"></p></div>
+      <div><a target="_blank" rel="noreferrer"></a><p class="result-meta"></p><p class="result-direction"></p><p class="result-source">Источник: PastVu</p></div>
     </article>
   </template>
 
@@ -115,6 +116,6 @@
 
   <script src="vendor/exifr.full.umd.js"></script>
   <script src="vendor/leaflet/leaflet.js"></script>
-  <script src="app.js?v=12" defer></script>
+  <script src="app.js?v=14" defer></script>
 </body>
 </html>

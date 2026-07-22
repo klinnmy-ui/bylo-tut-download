@@ -78,6 +78,13 @@ html{scroll-padding-top:64px}body{padding-top:64px}.topbar{position:fixed;inset:
 
 @media(min-width:851px){.results-panel.map-mode.has-comparison{grid-template-columns:minmax(230px,42%) minmax(0,1fr)}}
 .comparison figcaption a{color:var(--primary);font-weight:700;text-decoration-thickness:1px;text-underline-offset:2px}
+.legal-note{margin:6px 0 0;color:var(--muted);font-size:11px;line-height:1.35}
+.result-source{margin:7px 0 0;color:var(--historical);font-size:11px;font-weight:650}
+.comparison figcaption small{display:block;margin-top:3px;color:var(--historical);font-size:10px}
+
+/* Keep point selection and zoom readable if all remote tile hosts are unavailable. */
+.leaflet-container{background-color:#e9eeec;background-image:linear-gradient(rgba(79,96,91,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(79,96,91,.08) 1px,transparent 1px);background-size:32px 32px}
+.leaflet-container.tiles-unavailable::after{content:"Подложка карты временно недоступна. Точки и масштаб работают.";position:absolute;z-index:700;left:50%;bottom:10px;max-width:calc(100% - 24px);transform:translateX(-50%);padding:7px 10px;border:1px solid var(--outline);border-radius:10px;background:rgba(250,250,248,.94);color:var(--text);font-size:12px;line-height:1.25;text-align:center;pointer-events:none;box-shadow:0 3px 12px rgba(34,43,40,.12)}
 
 /* Keep the primary search action available without making the form cramped. */
 h1{font-size:clamp(24px,2.5vw,32px)}
