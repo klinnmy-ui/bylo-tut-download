@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
-  <link rel="stylesheet" href="styles.css?v=14">
+  <link rel="stylesheet" href="styles.css?v=18">
   <title>Было Тут | Линии времени</title>
 </head>
 <body>
@@ -23,14 +23,14 @@
       <div class="intro-block">
         <p class="eyebrow">Исторические фотографии рядом</p>
         <h1 id="search-title">Найдите, что было здесь раньше</h1>
-        <p class="privacy-note">Выбранное фото остаётся на устройстве. В PastVu передаются только координаты и параметры поиска.</p>
-        <p class="legal-note">Использует открытый API PastVu. Не является официальным приложением PastVu. Права на исторические изображения принадлежат их правообладателям.</p>
+        <p class="privacy-note">Фото остаётся на устройстве. В PastVu передаются только координаты поиска.</p>
+        <p class="legal-note"><a href="legal.html">Правовая информация и источники</a></p>
       </div>
 
       <div class="mode-grid" aria-label="Источник точки поиска">
-        <button id="gallery-button" class="mode-card" type="button"><span aria-hidden="true">▣</span><b>Галерея</b><small>Фото с координатами</small></button>
-        <button id="camera-button" class="mode-card" type="button"><span aria-hidden="true">◉</span><b>Камера</b><small>Текущий ракурс</small></button>
-        <button id="location-button" class="mode-card" type="button"><span aria-hidden="true">⌖</span><b>Моя позиция</b><small>Без выбора фото</small></button>
+        <button id="gallery-button" class="mode-card" type="button"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 5.5h16v13H4zM7 15l3-3 2.5 2.5 2-2L18 16M8 9h.01"/></svg><b>Галерея</b><small>Фото с координатами</small></button>
+        <button id="camera-button" class="mode-card" type="button"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg><b>Камера</b><small>Текущий ракурс</small></button>
+        <button id="location-button" class="mode-card" type="button"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 3v3m0 12v3M3 12h3m12 0h3"/></svg><b>Моя позиция</b><small>Без выбора фото</small></button>
       </div>
       <input id="photo-input" type="file" accept="image/jpeg,image/heic,image/heif" hidden>
 
@@ -84,7 +84,7 @@
         </div>
       </div>
       <div id="comparison" class="comparison" hidden></div>
-      <div id="results-list" class="results-list"><div class="empty-state">Запустите поиск — найденные фотографии появятся здесь.</div></div>
+      <div id="results-list" class="results-list"><div class="empty-state"><div><b>Исторические фотографии появятся здесь</b><span>1. Выберите фото, камеру или позицию<br>2. Уточните точку и радиус<br>3. Запустите поиск PastVu</span></div></div></div>
       <div id="results-map-pane" class="results-map-pane" hidden>
         <div class="map-toolbar" aria-label="Масштаб карты результатов">
           <button id="results-zoom-out" type="button" aria-label="Уменьшить масштаб">−</button>
@@ -116,6 +116,6 @@
 
   <script src="vendor/exifr.full.umd.js"></script>
   <script src="vendor/leaflet/leaflet.js"></script>
-  <script src="app.js?v=14" defer></script>
+  <script src="app.js?v=16" defer></script>
 </body>
 </html>

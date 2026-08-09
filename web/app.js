@@ -1,6 +1,7 @@
 const API_URL = "https://api.pastvu.com/api2";
 const DEFAULT_POINT = [55.7558, 37.6173];
-const state = { point: null, photoUrl: null, stream: null, results: [], selectedResult: null, pickerMarker: null, resultMarkers: [] };
+const INITIAL_RESULT_COUNT = 12;
+const state = { point: null, photoUrl: null, stream: null, results: [], visibleResultCount: INITIAL_RESULT_COUNT, selectedResult: null, pickerMarker: null, resultMarkers: [] };
 
 const $ = (id) => document.getElementById(id);
 const latitude = $("latitude");
@@ -8,8 +9,8 @@ const longitude = $("longitude");
 const message = $("message");
 const searchButton = $("search-button");
 
-const pickerMap = L.map("picker-map", { zoomControl: true }).setView(DEFAULT_POINT, 12);
-const resultsMap = L.map("results-map", { zoomControl: true }).setView(DEFAULT_POINT, 12);
+const pickerMap = L.map("picker-map", { zoomControl: false }).setView(DEFAULT_POINT, 12);
+const resultsMap = L.map("results-map", { zoomControl: false }).setView(DEFAULT_POINT, 12);
 [pickerMap, resultsMap].forEach(map => {
   map.attributionControl.setPrefix(false);
 });
@@ -246,6 +247,7 @@ function stopCamera() {
 searchButton.addEventListener("click", async () => {
   if (!pointFromInputs()) return setMessage("Укажите корректные широту и долготу.", true);
   state.selectedResult = null;
+  state.visibleResultCount = INITIAL_RESULT_COUNT;
   updateHistoricalReference();
   const radius = Number(document.querySelector('input[name="radius"]:checked').value);
   const params = JSON.stringify({ geo: [state.point.lat, state.point.lon], limit: 30, distance: radius, type: "photo" });
@@ -294,13 +296,15 @@ function renderResults() {
   comparison.replaceChildren();
   document.querySelector(".results-panel").classList.remove("has-comparison");
   list.replaceChildren();
-  state.resultMarkers.forEach(marker => marker.remove());
-  state.resultMarkers = [];
   if (!state.results.length) list.innerHTML = '<div class="empty-state">В выбранном радиусе фотографии не найдены.</div>';
-  const bounds = [];
-  state.results.forEach((photo, index) => {
+  const bounds = state.results
+    .filter(photo => Number.isFinite(photo.lat) && Number.isFinite(photo.lon))
+    .map(photo => [photo.lat, photo.lon]);
+  state.results.slice(0, state.visibleResultCount).forEach((photo, index) => {
     const fragment = $("result-template").content.cloneNode(true);
     const card = fragment.querySelector("article");
+    card.dataset.resultIndex = String(index);
+    card.classList.toggle("selected", photo === state.selectedResult);
     const image = fragment.querySelector("img");
     image.src = photo.thumb || "icons/icon.svg";
     image.alt = photo.title;
@@ -308,25 +312,58 @@ function renderResults() {
     link.textContent = photo.title;
     link.href = photo.page || "#";
     fragment.querySelector(".result-meta").textContent = [photo.year, photo.distance != null ? `≈ ${Math.round(photo.distance)} м` : null].filter(Boolean).join(" · ");
-    fragment.querySelector(".result-direction").textContent = photo.direction ? `Направление PastVu: ${photo.direction}` : "Направление не указано";
+    fragment.querySelector(".result-direction").textContent = photo.direction ? `${directionLabelRu(photo.direction)} · данные PastVu` : "Направление не указано";
     card.addEventListener("click", event => { if (event.target !== link) selectResult(index); });
     list.append(fragment);
-    if (Number.isFinite(photo.lat) && Number.isFinite(photo.lon)) {
-      bounds.push([photo.lat, photo.lon]);
-      const rotation = directionDegrees(photo.direction);
-      const icon = L.divIcon({
-        className: "",
-        html: `<div class="pastvu-marker" title="${escapeHtml(photo.title)}"><span style="transform:rotate(${rotation}deg)">↑</span></div>`,
-        iconSize: [30, 30], iconAnchor: [15, 15]
-      });
-      const marker = L.marker([photo.lat, photo.lon], { icon }).addTo(resultsMap).bindTooltip(escapeHtml(photo.title));
-      marker.on("click", () => selectResult(index));
-      state.resultMarkers.push(marker);
-    }
   });
+  if (state.visibleResultCount < state.results.length) {
+    const more = document.createElement("button");
+    more.type = "button";
+    more.className = "load-more";
+    more.textContent = `Показать ещё (${state.results.length - state.visibleResultCount})`;
+    more.addEventListener("click", () => {
+      state.visibleResultCount = Math.min(state.results.length, state.visibleResultCount + INITIAL_RESULT_COUNT);
+      renderResults();
+    });
+    list.append(more);
+  }
+  renderResultMarkers();
   if (state.point) bounds.push([state.point.lat, state.point.lon]);
   state.resultBounds = bounds;
   fitResultsMap();
+}
+
+function renderResultMarkers() {
+  state.resultMarkers.forEach(marker => marker.remove());
+  state.resultMarkers = [];
+  const groups = new Map();
+  state.results.forEach((photo, index) => {
+    if (!Number.isFinite(photo.lat) || !Number.isFinite(photo.lon)) return;
+    const key = `${photo.lat.toFixed(5)}:${photo.lon.toFixed(5)}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push({ photo, index });
+  });
+  groups.forEach(items => {
+    const selectedIndex = items.findIndex(item => item.photo === state.selectedResult);
+    const active = selectedIndex >= 0 ? items[selectedIndex] : null;
+    const rotation = directionDegrees(active?.photo.direction ?? items[0].photo.direction);
+    const markerBody = active || items.length === 1
+      ? `<span style="transform:rotate(${rotation}deg)">↑</span>`
+      : `<b>${items.length}</b>`;
+    const icon = L.divIcon({
+      className: "",
+      html: `<div class="pastvu-marker${active ? " selected" : ""}" title="${items.length > 1 ? `${items.length} фото в этой точке` : escapeHtml(items[0].photo.title)}">${markerBody}</div>`,
+      iconSize: [32, 32], iconAnchor: [16, 16]
+    });
+    const marker = L.marker([items[0].photo.lat, items[0].photo.lon], { icon }).addTo(resultsMap);
+    marker.bindTooltip(items.length > 1 ? `${items.length} фото в этой точке` : escapeHtml(items[0].photo.title));
+    let nextIndex = selectedIndex >= 0 ? selectedIndex : 0;
+    marker.on("click", () => {
+      selectResult(items[nextIndex].index);
+      nextIndex = (nextIndex + 1) % items.length;
+    });
+    state.resultMarkers.push(marker);
+  });
 }
 
 function fitResultsMap() {
@@ -338,6 +375,9 @@ function fitResultsMap() {
 function selectResult(index) {
   const photo = state.results[index];
   state.selectedResult = photo;
+  document.querySelectorAll(".result-card").forEach(card => {
+    card.classList.toggle("selected", Number(card.dataset.resultIndex) === index);
+  });
   updateHistoricalReference();
   const comparison = $("comparison");
   const figures = [];
@@ -349,6 +389,7 @@ function selectResult(index) {
   comparison.innerHTML = figures.join("");
   comparison.hidden = false;
   document.querySelector(".results-panel").classList.add("has-comparison");
+  renderResultMarkers();
   comparison.querySelectorAll("img").forEach(image => image.addEventListener("click", () => openPhotoViewer(image)));
   setTimeout(() => resultsMap.invalidateSize({ pan: false }), 0);
 }
@@ -393,6 +434,14 @@ function directionDegrees(direction) {
   const names = { n: 0, ne: 45, e: 90, se: 135, s: 180, sw: 225, w: 270, nw: 315 };
   const numeric = Number(direction);
   return Number.isFinite(numeric) ? numeric : names[String(direction || "").toLowerCase()] ?? 0;
+}
+
+function directionLabelRu(direction) {
+  const labels = { n: "С", ne: "СВ", e: "В", se: "ЮВ", s: "Ю", sw: "ЮЗ", w: "З", nw: "СЗ" };
+  const normalized = String(direction || "").trim().toLowerCase();
+  if (labels[normalized]) return labels[normalized];
+  const degrees = directionDegrees(direction);
+  return `${Math.round(degrees)}°`;
 }
 
 function distanceMeters(lat1, lon1, lat2, lon2) {
